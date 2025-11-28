@@ -1,0 +1,5 @@
+{
+  "name": "BookLens - Immersive Book Experience",
+  "description": "An AI-powered enhanced landing page for books, featuring deep analysis, character insights, and an interactive chat interface. Defaults to 'It's in the Blood'.",
+  "requestFramePermissions": []
+}
