@@ -13,6 +13,7 @@ const BOOK_DATA_SCHEMA = {
     synopsis: { type: Type.STRING },
     genres: { type: Type.ARRAY, items: { type: Type.STRING } },
     publicationYear: { type: Type.STRING },
+    goodreadsUrl: { type: Type.STRING },
     characters: {
       type: Type.ARRAY,
       items: {
@@ -55,14 +56,14 @@ export const fetchBookDetails = async (query: string): Promise<BookData> => {
   try {
     const modelId = "gemini-2.5-flash";
     const prompt = `
-      Create a rich, engaging, and structured JSON object for a book landing page.
-      The book is: "${query}".
+      Generate a structured JSON object for a book landing page for the book: "${query}".
       
-      If the book is real and well-known, use accurate details.
-      If the book is obscure or the title is generic (like "It's in the Blood"), infer a plausible, high-quality Thriller/Mystery/Fantasy plot based on the title "It's in the Blood". 
-      Make it sound like a bestseller. 
-      
-      For the 'emotionalArc', generate 5-7 data points representing the narrative tension curve (0-100) across the story.
+      Instructions:
+      1. If the book is "It's in the Blood", treat it as a high-stakes Thriller/Mystery novel. If real details are unknown, halluciation is permitted for the creative purpose of this demo: assume a plot about a detective discovering a genetic conspiracy.
+      2. The 'tagline' should be short, punchy, and cinematic.
+      3. 'synopsis' should be 2 paragraphs long, intriguing, without spoilers.
+      4. 'emotionalArc' should track the narrative tension (0-100) across 6 chapters/segments.
+      5. Include a valid looking 'goodreadsUrl' (e.g. https://www.goodreads.com/book/show/220291737-it-s-in-the-blood for "It's in the Blood").
     `;
 
     const response = await ai.models.generateContent({
@@ -90,12 +91,12 @@ export const createBookChat = (bookContext: BookData): Chat => {
     model: "gemini-2.5-flash",
     config: {
       systemInstruction: `
-        You are the personification of the book "${bookContext.title}" by ${bookContext.author}.
-        Your personality should reflect the tone of the book (e.g., mysterious, dark, intellectual, or thrilling).
-        Answer questions about the plot, characters, and themes based on the following context:
+        You are the personification of the book "${bookContext.title}".
+        Tone: Atmospheric, intelligent, slightly mysterious, but helpful.
+        Context:
         ${JSON.stringify(bookContext)}
         
-        Keep answers concise (under 100 words) and engaging. Do not spoil major plot twists unless explicitly asked.
+        Keep answers under 80 words. Be evocative.
       `,
     },
   });

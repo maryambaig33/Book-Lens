@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BookData, ChatMessage } from '../types';
 import { createBookChat } from '../services/geminiService';
-import { Send, Bot, User, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Sparkles, X, ChevronDown } from 'lucide-react';
 import { Chat } from '@google/genai';
 
 interface BookChatProps {
@@ -9,27 +9,28 @@ interface BookChatProps {
 }
 
 const BookChat: React.FC<BookChatProps> = ({ data }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'init',
-      role: 'model',
-      text: `Greetings. I am the spirit of "${data.title}". Ask me anything about my pages, my secrets, or the characters that dwell within.`,
-      timestamp: Date.now()
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const chatSessionRef = useRef<Chat | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Initialize chat session on mount or data change
+    // Reset messages and session when book changes
     chatSessionRef.current = createBookChat(data);
+    setMessages([
+        {
+          id: 'init',
+          role: 'model',
+          text: `I am the essence of "${data.title}". Ask me what lies beneath the surface.`,
+          timestamp: Date.now()
+        }
+    ]);
   }, [data]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const handleSend = async () => {
     if (!input.trim() || !chatSessionRef.current) return;
@@ -47,7 +48,7 @@ const BookChat: React.FC<BookChatProps> = ({ data }) => {
 
     try {
       const result = await chatSessionRef.current.sendMessage({ message: userMsg.text });
-      const responseText = result.text; // Access .text directly property
+      const responseText = result.text;
 
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -61,7 +62,7 @@ const BookChat: React.FC<BookChatProps> = ({ data }) => {
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'model',
-        text: "A shadow clouds my vision. I cannot answer right now.",
+        text: "I cannot find the words right now.",
         timestamp: Date.now()
       }]);
     } finally {
@@ -74,54 +75,70 @@ const BookChat: React.FC<BookChatProps> = ({ data }) => {
   };
 
   return (
-    <div className="py-20 bg-slate-950 relative">
-      <div className="container mx-auto px-6">
-        <div className="max-w-4xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[600px]">
+    <div className="py-24 bg-gradient-to-b from-slate-950 to-black relative">
+      <div className="container mx-auto px-6 max-w-5xl">
+        
+        {/* Section Header */}
+        <div className="text-center mb-12">
+            <h2 className="text-3xl font-serif font-bold text-white flex items-center justify-center gap-3">
+               Interrogate the Text <Sparkles className="text-blood-500 w-5 h-5" />
+            </h2>
+            <p className="text-slate-500 mt-2">Speak directly with the persona of the book.</p>
+        </div>
+
+        <div className="glass-panel rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[700px] border border-slate-800/50">
           
-          {/* Header */}
-          <div className="p-6 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
-             <div className="flex items-center gap-3">
-               <div className="p-2 bg-blood-900/50 rounded-full text-blood-400">
-                 <Sparkles size={20} />
+          {/* Chat Header */}
+          <div className="p-6 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between z-10">
+             <div className="flex items-center gap-4">
+               <div className="relative">
+                 <div className="w-12 h-12 bg-gradient-to-br from-blood-800 to-slate-800 rounded-full flex items-center justify-center text-white shadow-lg ring-2 ring-slate-800">
+                   <Bot size={20} />
+                 </div>
+                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
                </div>
                <div>
-                 <h3 className="text-white font-semibold">Talk to the Book</h3>
-                 <p className="text-slate-400 text-xs">AI-Powered Persona</p>
+                 <h3 className="text-slate-100 font-semibold text-lg">{data.title}</h3>
+                 <p className="text-blood-400 text-xs font-mono tracking-widest uppercase">AI Persona Active</p>
                </div>
              </div>
-             <div className="text-xs text-slate-500 uppercase tracking-widest font-semibold">Gemini 2.5 Active</div>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-slate-900 to-slate-950">
+          <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] bg-fixed bg-slate-950/50">
             {messages.map((msg) => (
               <div 
                 key={msg.id} 
                 className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-slate-700' : 'bg-blood-900'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-lg ${msg.role === 'user' ? 'bg-slate-700' : 'bg-blood-900'}`}>
                   {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
                 </div>
                 
-                <div className={`max-w-[80%] p-4 rounded-xl text-sm leading-relaxed ${
+                <div className={`max-w-[75%] p-5 rounded-2xl text-sm leading-relaxed shadow-lg relative group ${
                   msg.role === 'user' 
-                    ? 'bg-slate-800 text-slate-200 rounded-tr-none' 
-                    : 'bg-blood-950/30 border border-blood-900/30 text-slate-300 rounded-tl-none'
+                    ? 'bg-slate-800 text-slate-100 rounded-tr-sm' 
+                    : 'bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 text-slate-300 rounded-tl-sm'
                 }`}>
                   {msg.text}
+                  {/* Tiny timestamp */}
+                  <span className="absolute bottom-1 right-3 text-[10px] opacity-0 group-hover:opacity-40 transition-opacity">
+                      {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  </span>
                 </div>
               </div>
             ))}
+            
             {isTyping && (
-               <div className="flex gap-4 animate-pulse">
-                 <div className="w-8 h-8 rounded-full bg-blood-900 flex items-center justify-center">
+               <div className="flex gap-4 animate-fade-in">
+                 <div className="w-8 h-8 rounded-full bg-blood-900 flex items-center justify-center shrink-0">
                    <Bot size={14} />
                  </div>
-                 <div className="bg-blood-950/30 border border-blood-900/30 p-4 rounded-xl rounded-tl-none">
-                   <div className="flex gap-1">
-                     <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce"></div>
-                     <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce delay-75"></div>
-                     <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce delay-150"></div>
+                 <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl rounded-tl-none">
+                   <div className="flex gap-1.5 items-center h-full">
+                     <div className="w-1.5 h-1.5 bg-blood-500 rounded-full animate-bounce"></div>
+                     <div className="w-1.5 h-1.5 bg-blood-500 rounded-full animate-bounce delay-100"></div>
+                     <div className="w-1.5 h-1.5 bg-blood-500 rounded-full animate-bounce delay-200"></div>
                    </div>
                  </div>
                </div>
@@ -130,24 +147,27 @@ const BookChat: React.FC<BookChatProps> = ({ data }) => {
           </div>
 
           {/* Input Area */}
-          <div className="p-4 bg-slate-800 border-t border-slate-700">
-            <div className="relative">
+          <div className="p-6 bg-slate-900/80 backdrop-blur-md border-t border-slate-800">
+            <div className="relative group">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Ask about the plot, meaning, or secrets..."
-                className="w-full bg-slate-900 text-slate-200 pl-4 pr-12 py-4 rounded-lg border border-slate-700 focus:border-blood-500 focus:ring-1 focus:ring-blood-500 outline-none transition-all placeholder:text-slate-600"
+                placeholder="Ask me about the characters, the ending, or the hidden meanings..."
+                className="w-full bg-slate-950 text-slate-200 pl-6 pr-14 py-5 rounded-xl border border-slate-800 focus:border-blood-600 focus:ring-1 focus:ring-blood-600 focus:shadow-[0_0_20px_rgba(225,29,72,0.1)] outline-none transition-all placeholder:text-slate-600 font-light"
               />
               <button 
                 onClick={handleSend}
                 disabled={!input.trim() || isTyping}
-                className="absolute right-2 top-2 p-2 bg-blood-700 hover:bg-blood-600 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="absolute right-3 top-3 p-2.5 bg-blood-700 hover:bg-blood-600 text-white rounded-lg disabled:opacity-50 disabled:bg-slate-800 transition-all hover:scale-105 active:scale-95"
               >
                 <Send size={18} />
               </button>
             </div>
+            <p className="text-center text-xs text-slate-600 mt-3 font-mono">
+                AI can make mistakes. Please check important information.
+            </p>
           </div>
 
         </div>

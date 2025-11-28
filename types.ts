@@ -30,6 +30,7 @@ export interface BookData {
   synopsis: string;
   genres: string[];
   publicationYear: string;
+  goodreadsUrl?: string;
   characters: Character[];
   reviews: Review[];
   themes: string[];
